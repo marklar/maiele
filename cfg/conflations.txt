@@ -1,0 +1,46 @@
+psp     ps2     ps3     playstation
+ounces	oz
+pounds	lbs
+the	teh
+and	&
+road	rd
+at	@
+grey	gray
+one	1
+II	two	2
+III	three	3
+IV	four	4
+five	5
+six	6
+seven	7
+eight	8
+nine	9
+ten	10
+eleven	11
+twelve	12
+xiii	thirteen	13
+fourteen	14
+fifteen	15
+sixteen	16
+seventeen	17
+eighteen	18
+nineteen	19
+twenty	20
+thirty	30
+forty	40
+fifty	50
+sixty	60
+seventy	70
+eighty	80
+ninety	90
+hundred	100
+1st	first
+2nd	second
+3rd	third
+4th	fourth
+5th	fifth
+6th	sixth
+7th	seventh
+8th	eighth
+9th	ninth
+10th	tenth

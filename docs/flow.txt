@@ -1,0 +1,70 @@
+
+Lsd.callback
+  receive Http_types.request
+
+Controller.response_body
+  acts as router
+
+Controller.results
+  parse Http_types.request using Request module
+  make Query_opts.t
+
+Search_fun.search
+  get_domain_results_pairs [below]
+  possibly decorate with in-stock flag
+  convert results to JSON (or XML)
+
+Search_fun.get_domain_results_pairs
+  create list of Query.t, using Query.from_string.
+    KEEP ONLY FIRST (doc-only).
+  fetch results for each domain_name requested, using Searcher.results.
+  
+Query.from_string
+  creates: doc-only, code-initial, and code-final versions of query
+  uses:    only doc-only
+  versions with doc: Str_query_tree.of_string
+
+Str_query_tree.of_string
+  use Lexer.lex to lex string (qua Lexer.Query)
+
+(* Searcher's principle job: grab proper domain. *)
+Searcher.results
+  uses only first Query.t.
+  gets appropriate Domain.t.
+  if requesting in-stock charities
+    use Charities_domain.in_stock_results
+  else
+    use Domain_searcher.results
+
+Domain_searcher.results
+  creates a Filter_fun.t [below] for keeping/dropping each Result.t.
+  then, for each query...
+  results_for_query:
+    could switch on whether there's product-code (UPC) searching to do,
+    BUT usually just calls get_doc_results.
+  get_doc_results:
+    get two sets of results: "shorts" and "pops".
+    integrate the two lists (some of "shorts" into "pops").
+
+Domain_searcher.get_shorts_and_pops
+  create 2 versions of Id_query_tree.t:
+    - "avec": original; keeps query intact
+    - "sans": if any token appears to match domain name, remove it
+  use get_withs_then_withouts, to:
+    - get shorts
+    - get pops
+
+Domain_searcher.get_shorts
+  create a Result_fetcher.t [below]
+  fetch the "avec" results (i.e. we favor these)
+
+Filter_fun.t
+  Result.t -> Result.t option
+  so, either keep it (Some x) or drop it (None).
+  contains a Uniquer.t.
+
+Uniquer.t
+  simply a wrapper around a pair of Hashtbls (mutable).
+  key : Result ID / Target ID
+  val : 1
+  if key is present, that means we've seen that thing.

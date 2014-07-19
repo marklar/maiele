@@ -1,0 +1,47 @@
+http://projects.camlcity.org/projects/dl/ocamlnet-3.0test2/doc/html-main/Netcamlbox.html
+
+Camlbox: for parallelism
+  - fast IPC mechanism
+  - send OCaml values from one process to another
+  - on same machine
+  - no (un)marhsalling
+
+processes:
+ [1] reader:
+     creates camlbox.
+     can hold m msgs, each <= n bytes.
+ [2] writer:
+     if camlbox is full, blocks.
+     once there's space, copies ocaml value to it.
+     value may not be function.
+     send is async: no notification whether read.
+ [3] reader:
+     may be busy.  need not use value right away.
+     when using, accesses it directly.  (no unmarshalling.)
+     writer & reader must agree on types.  (best if same executable.)
+ [4] reader:
+     keep refs only to existing msgs.
+     if msg is deleted, don't access value.
+ [5] reader: deletes camlbox when done with it.
+
+n -> 1
+  - multiple senders
+  - one receiver (or forks of same)
+
+On the system level, camlboxes are stored in POSIX shared memory
+objects. These objects have kernel persistence and continue to live
+after the process creating the camlbox has terminated without
+unlinking the box.
+
+Shared memory:
+  - method of inter-process communication (IPC)
+  - exchange data between programs running at the same time.
+    1 process creates an area in RAM; the other processes can access it.
+
+
+Cache coherence:
+  - consistency of data stored in local caches of a shared resource.
+  - special case of memory coherence.
+  - if each client maintains (its own) cache of a common memory resource,
+    then problems may arise with inconsistent data.
+

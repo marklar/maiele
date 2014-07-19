@@ -1,0 +1,1 @@
+external format_tm: string -> Unix.tm -> string = "stew_strftime_tm"

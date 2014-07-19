@@ -1,0 +1,249 @@
+#
+# docs:
+#   - ocamldep : http://caml.inria.fr/pub/docs/manual-ocaml/manual027.html
+#   - Gnu make : http://www.gnu.org/software/make/manual/
+#
+# This makefile is specifically to be used with the build_top_level script
+# Replace the code in Makefile with this file and you can then use
+# ./script/build_top_level to produce runnable commands that will give you a
+# mostly complete toplevel of the Maiele project
+#
+
+.PHONY: all
+all: daemons index
+
+.PHONY: dist
+dist: clean all
+
+# ocamlc -where
+STD_LIB_DIR = /usr/local/lib/ocaml
+LIB_DIR = $(STD_LIB_DIR)/site-lib
+
+JO_OTHER_LIB_DIRS = \
+    -I lib/time \
+	-I $(LIB_DIR)/pcre \
+	-I $(LIB_DIR)/netsys \
+	-I $(LIB_DIR)/netstring \
+	-I $(LIB_DIR)/mysql \
+	-I $(LIB_DIR)/http \
+	-I $(LIB_DIR)/extlib \
+	-I $(LIB_DIR)/json-wheel \
+	-I $(LIB_DIR)/equeue \
+	-I $(LIB_DIR)/netclient \
+	-I $(LIB_DIR)/oUnit
+
+OTHER_LIB_DIRS = $(JO_OTHER_LIB_DIRS) -I $(STD_LIB_DIR)/threads
+
+CCLIB = -cclib /usr/lib64/mysql/libmysqlclient.so -cclib lib/time/dlltime_stubs.so
+
+GLYDE_INCLUDES = -I src -I test
+JO_INCLUDES = $(GLYDE_INCLUDES) -I $(LIB_DIR) $(JO_OTHER_LIB_DIRS)     # all relevant -I options here
+INCLUDES = $(GLYDE_INCLUDES) -I $(LIB_DIR) $(OTHER_LIB_DIRS)           # all relevant -I options here
+
+# ocaml
+OCAMLC   = ocamlc
+OCAMLDEP = ocamldep
+
+OCAMLFLAGS = $(INCLUDES) $(CCLIB)                           # add other options for ocamlc here
+
+OTHER_LIBS = \
+    lib/time/time.cma \
+	$(LIB_DIR)/pcre/pcre.cma \
+	$(LIB_DIR)/netsys/netsys.cma \
+	$(LIB_DIR)/netstring/netstring.cma \
+	$(LIB_DIR)/mysql/mysql.cma \
+	$(LIB_DIR)/http/http.cma \
+	$(LIB_DIR)/equeue/equeue.cma \
+	$(LIB_DIR)/netclient/netclient.cma \
+	$(LIB_DIR)/extlib/extLib.cma \
+	$(LIB_DIR)/json-wheel/jsonwheel.cma \
+	$(LIB_DIR)/oUnit/oUnit.cma
+
+# unix.cma - only for non-Jo.
+NO_JO_STD_LIBS = \
+	unix.cma \
+    bigarray.cma \
+	str.cma \
+	$(STD_LIB_DIR)/threads/threads.cma
+
+DAEMON_OBJS = \
+	src/util.cmo \
+	src/logger.cmo \
+	src/cfg.cmo \
+	src/dbd.cmo \
+	src/solr.cmo \
+	src/diacritics.cmo \
+	src/lexer_util.cmo \
+	src/variant.cmo \
+	src/maiele_lexer.cmo \
+	src/doc_lexer.cmo \
+	src/mmap.cmo \
+	src/iter_fun.cmo \
+	src/int_ary.cmo \
+	src/ord_int_ary.cmo \
+	src/request.cmo \
+	src/show.cmo \
+	src/tag.cmo \
+	src/conflator.cmo \
+	src/embolden.cmo \
+	src/str_query_tree.cmo \
+	src/bool_ary.cmo \
+	src/int_ary_tbl.cmo \
+	src/int_ary_idx.cmo \
+	src/char_ary.cmo \
+	src/str_tbl.cmo \
+	src/glu_tbl.cmo\
+	src/tag_tbl.cmo \
+	src/lexicon.cmo \
+	src/product_code_tbl.cmo \
+	src/matrix.cmo \
+	src/query_opts.cmo \
+	src/result.cmo \
+	src/result_tbl.cmo \
+	src/store_in_stock.cmo \
+	src/uniquer.cmo \
+	src/domain.cmo \
+	src/id_query_tree.cmo \
+	src/sans_id_query_tree.cmo \
+	src/filter_fun.cmo \
+	src/result_fetcher.cmo \
+	src/product_code_search.cmo \
+	src/query_tree.cmo \
+	src/query.cmo \
+	src/domain_searcher.cmo \
+	src/charities_domain.cmo \
+	src/searcher.cmo \
+	src/data_service.cmo \
+	src/in_stock.cmo \
+	src/is_sellable.cmo \
+	src/event_handlers.cmo \
+	src/cookies.cmo \
+	src/tag_in_stock.cmo
+
+.PHONY: daemons
+daemons: bin/lsd bin/lsync bin/search_product_code
+
+SEARCH_PRODUCT_CODE_OBJS = $(OTHER_LIBS) $(DAEMON_OBJS) src/search_product_code.cmo
+bin/search_product_code: $(SEARCH_PRODUCT_CODE_OBJS)
+	$(OCAMLC) $(OCAMLFLAGS) $(NO_JO_STD_LIBS) $(SEARCH_PRODUCT_CODE_OBJS) -o $@
+
+LSD_OBJS = $(OTHER_LIBS) $(DAEMON_OBJS) src/search_fun.cmo src/controller.cmo src/lsd.cmo
+bin/lsd: $(LSD_OBJS)
+	$(OCAMLC) $(OCAMLFLAGS) -c $< $(NO_JO_STD_LIBS) $(LSD_OBJS) -o $@
+
+LSYNC_OBJS = $(OTHER_LIBS) $(DAEMON_OBJS) src/lsync.cmo
+bin/lsync: $(LSYNC_OBJS)
+	$(OCAMLC) $(OCAMLFLAGS) -c $< $(NO_JO_STD_LIBS) $(LSYNC_OBJS) -o $@
+
+LSYNC_OBJS = $(OTHER_LIBS) $(DAEMON_OBJS) src/lsync.cmo
+bin/lsync: $(LSYNC_OBJS)
+	$(OCAMLC) $(OCAMLFLAGS) -c $< $(NO_JO_STD_LIBS) $(LSYNC_OBJS) -o $@
+
+# src/conflator.cmo
+IDX_SPECIFIC_OBJS = \
+	src/idx_file.cmo \
+	src/tbl_mkr.cmo \
+	src/result_tbl_mkr.cmo \
+	src/matrix_mkr.cmo \
+	src/faux_result_tbl_mkr.cmo \
+	src/line_info.cmo \
+	src/entities.cmo \
+	src/series.cmo \
+	src/sql.cmo \
+	src/prio_queue.cmo
+
+RESULT_TBL_EXES = \
+	bin/write_str_file \
+	bin/read_str_file \
+	bin/fix_pops \
+	bin/create_faux \
+	bin/make_pop_idx \
+	bin/make_target_idx \
+	bin/tag_tbl_mkr \
+	bin/glu_tbl_mkr \
+	bin/storefront_mkr \
+	bin/dump_product_codes \
+	bin/mk_product_codes_tbl \
+	bin/mk_glu_2_codes
+
+# Also: bin/mk_supers_idx.  For optimizing corner-case queries.
+BUILD_IDX_EXES = \
+	bin/dump_postings \
+	bin/postings_file_rdr \
+	bin/mk_lexicon_idx
+
+# EXCEPT jo_denormalize_mtx, which needs to be built differently.
+EMBIGGEN_MTX_EXES = \
+	bin/partition_mtx \
+	bin/concat_mtxs \
+	bin/add_pop_postings
+
+NO_JO_IDX_EXES = $(RESULT_TBL_EXES) $(BUILD_IDX_EXES) $(EMBIGGEN_MTX_EXES)
+.PHONY: index
+index: $(NO_JO_IDX_EXES)
+
+ALL_IDX_OBJS = $(OTHER_LIBS) $(DAEMON_OBJS) $(IDX_SPECIFIC_OBJS)
+
+# SOMETHING MORE GENERIC HERE?
+
+IDX_BUILD = $(OCAMLC) $(OCAMLFLAGS) -c $< $(NO_JO_STD_LIBS) $(ALL_IDX_OBJS)
+
+bin/write_str_file: $(ALL_IDX_OBJS) src/write_str_file.cmo
+	$(IDX_BUILD) src/write_str_file.cmo -o $@
+bin/read_str_file: $(ALL_IDX_OBJS) src/read_str_file.cmo
+	$(IDX_BUILD) src/read_str_file.cmo -o $@
+bin/fix_pops: $(ALL_IDX_OBJS) src/fix_pops.cmo
+	$(IDX_BUILD) src/fix_pops.cmo -o $@
+bin/create_faux: $(ALL_IDX_OBJS) src/create_faux.cmo
+	$(IDX_BUILD) src/create_faux.cmo -o $@
+bin/make_pop_idx: $(ALL_IDX_OBJS) src/make_pop_idx.cmo
+	$(IDX_BUILD) src/make_pop_idx.cmo -o $@
+bin/make_target_idx: $(ALL_IDX_OBJS) src/make_target_idx.cmo
+	$(IDX_BUILD) src/make_target_idx.cmo -o $@
+bin/tag_tbl_mkr: $(ALL_IDX_OBJS) src/tag_tbl_mkr.cmo
+	$(IDX_BUILD) src/tag_tbl_mkr.cmo -o $@
+bin/glu_tbl_mkr: $(ALL_IDX_OBJS) src/glu_tbl_mkr.cmo
+	$(IDX_BUILD) src/glu_tbl_mkr.cmo -o $@
+bin/storefront_mkr: $(ALL_IDX_OBJS) src/storefront_mkr.cmo
+	$(IDX_BUILD) src/storefront_mkr.cmo -o $@
+bin/dump_postings: $(ALL_IDX_OBJS) src/dump_postings.cmo
+	$(IDX_BUILD) src/dump_postings.cmo -o $@
+bin/postings_file_rdr: $(ALL_IDX_OBJS) src/postings_file_rdr.cmo
+	$(IDX_BUILD) src/postings_file_rdr.cmo -o $@
+bin/mk_lexicon_idx: $(ALL_IDX_OBJS) src/mk_lexicon_idx.cmo
+	$(IDX_BUILD) src/mk_lexicon_idx.cmo -o $@
+bin/partition_mtx: $(ALL_IDX_OBJS) src/partition_mtx.cmo
+	$(IDX_BUILD) src/partition_mtx.cmo -o $@
+bin/concat_mtxs: $(ALL_IDX_OBJS) src/concat_mtxs.cmo
+	$(IDX_BUILD) src/concat_mtxs.cmo -o $@
+bin/add_pop_postings: $(ALL_IDX_OBJS) src/add_pop_postings.cmo
+	$(IDX_BUILD) src/add_pop_postings.cmo -o $@
+
+bin/dump_product_codes: $(ALL_IDX_OBJS) src/dump_product_codes.cmo
+	$(IDX_BUILD) src/dump_product_codes.cmo -o $@
+
+bin/mk_product_codes_tbl: $(ALL_IDX_OBJS) src/mk_product_codes_tbl.cmo
+	$(IDX_BUILD) src/mk_product_codes_tbl.cmo -o $@
+bin/mk_glu_2_codes: $(ALL_IDX_OBJS) src/mk_glu_2_codes.cmo
+	$(IDX_BUILD) src/mk_glu_2_codes.cmo -o $@
+
+# Common rules
+.SUFFIXES: .ml .mli .cmo .cmi .cmo
+
+.ml.cmo:
+	$(OCAMLC) $(OCAMLFLAGS) -c $<
+
+.mli.cmi:
+	$(OCAMLC) $(OCAMLFLAGS) -c $<
+
+.PHONY: clean
+clean:
+	rm -rf tmp                      # testing temp dir
+	rm -f bin/* test/*_test         # executables
+	rm -f test/*.cm[iox] test/*.o   # test obj files
+	rm -f src/*.cm[iox] src/*.o     # src obj files
+
+.depend:
+	$(OCAMLDEP) $(INCLUDES) src/*.mli src/*.ml test/*.ml > $@
+
+include .depend

@@ -1,0 +1,56 @@
+
+== Static Data Structures ==
+
+Aside from the config info (see previous section), there's other
+static data which isn't stored in index files.
+
+
+== Temporary Data Structures ==
+
+These two data structures are not tables (or table-like).  Unlike the
+table(-like) structures which remain in perpetual use, "instances" of
+these are created and destroyed as needed.
+
+  * Query_opts : set of options associated with the search query,
+    for specifying both how to search and how to display the results.
+
+  * Query_tree : tree representation of a search query.  Two types:
+
+      1. Str_query_tree : data = query tokens (strings)
+         The query before its applied to any given domain.
+
+      2. Id_query_tree  : data = domain-specific lexeme IDs (Int_ary).
+         One (or more) created per domain.  This is what gets evaluated
+         to create the results set.
+
+  * Result : single record from Result_tbl.
+
+A Query_tree is created with each query.  Like Domain, this module is
+a workhorse; its functions are the engine of evaluation of a query.
+
+A Result is created for each (query-)matching result from the
+Result_tbl.  It's a simple record which facilitates gathering up data
+for display.
+
+
+= Other Modules =
+
+  * Searcher : app "main"
+
+The Searcher module is glue.  It provides top-level logic for
+accepting a query, turning it into a query tree, and handing it off to
+each domain for evaluation.  One could think of Searcher as a
+data-structure module, just like the others -- it wraps (and
+represents) all (4) Domains.
+
+  * Lexer : splits query
+
+The Lexer module is used only within the Query_tree module.  It is
+used to split a query string into its separate lexemes in order to
+create a Query_tree.
+
+  * Server : HTTP daemon
+
+Finally, the Server module is an HTTP daemon, a web controller for the
+app.  It passes the query to the Searcher and returns its results to
+the user agent.

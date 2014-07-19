@@ -1,0 +1,90 @@
+
+= Indexes =
+
+The OCaml impl of Live Search uses data files ("indices") very similar
+to those used by the old Ruby/C version.
+
+The Ruby impl was split into two logical layers: the data store
+(CStore) and search (Maiele).  The Ruby data store layer (CStore) was
+designed to be general-purpose -- an in-process, read-only db.  To
+that end, it provides many facilities which are not strictly necessary
+for search.  (Some of them are useful for index creation.)
+
+The OCaml impl, in contrast, is ad-hoc.  Like the Ruby code, it too
+draws a clean line between data and search, but its data-retrieval
+code is far simpler, tailored to the needs of live search.
+
+
+= Data Structures =
+
+Most of the OCaml code is organized around data structures.  That is,
+most modules are collections of functions on a certain data type.
+Their names reflect that.
+
+
+== Arrays: mmap-ed data ==
+
+The lowest-level modules are those which wrap the data files.  They
+are all Arrays of some simple type:
+
+  * Char_ary : mmap-ed char  array
+  * Int_ary  : mmap-ed Int32 array
+  * Bool_ary : mmap-ed Int8  array
+
+Arrays are always indexed from 0.
+
+
+== Tables ==
+
+Tables are used to access data stored across multiple Arrays.  Unlike
+Arrays, the records in Tables are indexed from 1.
+
+There are Simple Tables, with just a single column (i.e. data type),
+and Complex Tables.
+
+
+=== Simple, Generic Tables ===
+
+Simple Tables are a single column -- i.e. contain a single data type.
+
+  * Int_ary_tbl : table of int_arys
+  * Str_tbl     : table of strings (char_arys)
+
+Like the Arrays, the simple Tables are highly reusable for other
+programs.
+
+
+=== Composed, Search-Specific Tables ===
+
+Composed Tables represent data structures specific to live search.
+They may contain multiple columns (built from Simple Tables or
+Arrays).
+
+  * Lexicon    : lexemes (words), stored in hash of ordered sets
+  * Matrix     : "postings".  map: lexeme -> result_ids
+  * Result_tbl : data about the results
+
+The Lexicon we use to find query lexemes.  It is a complicated data
+structure and has non-trivial (but time-honored) logic for quickly
+finding strings.
+
+The Matrix we use to find which results match each lexeme in the
+query.  It's a simple table with little accompanying logic.  For each
+lexeme, result IDs are stored twice: sorted by [1] result ID (i.e. by
+the document's lexical "score") and by [2] popularity rank.
+
+The Result_tbl we use to store and fetch the results, both its data
+for display (i.e. its text) and metadata (e.g. its popular rank, its
+associated "targets", etc.).
+
+All three of these Tables compose a:
+
+  * Domain : all data for one domain (e.g. product vertical)
+
+FIXME:
+
+The Domain module has two principle jobs:
+  1. to provide tables for calculating a list of result IDs, and
+  2. to filter the results for uniqueness of referent to create
+     a displayable result set.
+

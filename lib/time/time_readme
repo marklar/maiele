@@ -1,0 +1,12 @@
+This lib's only purpose is for use in creating a top level of the Maiele environment.
+The build_toplevel script will add the time.cma library into the top level and use it
+to replace the conflicting annexlib. All of the compiled resources are included and
+should not ever need to be compiled again, but if it needs to be compiled again for
+any reason you can follow these commands
+
+in the lib directory:
+ocamlc -c time.mli
+ocamlc -c time.ml
+ocamlc -c time_stubs.c
+ocamlmklib -o time_stubs time_stubs.o
+ocamlc -a -custom time.cma time.cmo -dllib dlltime_stubs.so

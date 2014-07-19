@@ -1,0 +1,28 @@
+--- 
+:ports: [10444, 10445]
+:idx_root_dir: /home/tester/Work/Maiele/idx
+
+# VERTICALS / DOMAINS
+:buy_domains: [browse, games, ce, tablets, mp3s, phones, accessories]
+:sell_domains: [games, ce, tablets, mp3s, phones, laptops]
+:domains_with_in_stock_info: [games, games_with_platforms, games_ds, games_3ds, games_gamecube, games_ps2, games_ps3, games_psp, games_wii, games_xbox, games_xbox360, ce, tablets, mp3s, phones, accessories, laptops]
+
+# PARALLELISM
+:jo_parallel_p: true               # default: true
+:jo_timeout_secs: 3.0              # default: 2.0
+:email_addresses: [{name: Dave, address: dave@glyde.com}]
+
+# DB - indexing.  non-browse in-stock info.
+:db_host: dev-db02
+:db_port: 67306                 # andrew's (because of RGS).  mark: 58306.
+:db_name: peeko_prod
+:tag_db_name: peeko_prod_glu_tags_1
+:db_user: josh
+:db_pwd: BOGUS
+:glyde_storefront_name: glyde   # default: 'glyde'
+
+# LSYNCD - browse in-stock info.
+:solr_host: glu-service-mark.glyde.com
+:solr_port: 80
+:lsync_frequency_secs: 1020.0   # default: 30.0
+:browse_min_glus: 1             # default: 1

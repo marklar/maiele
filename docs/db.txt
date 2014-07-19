@@ -1,0 +1,58 @@
+
+= Database Access =
+
+Maiele code accesses MySQL dbs for a number of reasons:
+
+  * During indexing, for fetching all data from the DB to put into a
+    domain's Result_tbl and optional additional tables.
+
+    + For creating all the standard, required parts of a Result_tbl,
+      the executable is the somewhat strangely-named "write_str_file".
+
+    + For creating the "Browse" domain's Tag_tbl (using
+      "tag_tbl_mkr"), which stores info about tags: their names,
+      types, and how many associated Glus are in stock.
+
+    + For creating the "Charities" domain's "store_ids_tbl" (using
+      "storefront_mkr"), which stores, for each charity name, the set
+      of associated Storefront IDs.
+
+  * At daemon start-up time, to load the names of each GluTagType and
+    store them in an in-memory Hashtbl in the module Tag_tbl
+    (src/tag_tbl.ml).
+
+    We could simply store that info in an index file, as we do with
+    most mostly-static data.  I honestly don't remember why we don't
+    -- perhaps because we expect those tag type names to change more
+    frequently than other stuff?
+
+  * During "buy-side" querying, to see for each result whether it has
+    any Glus in stock.  Not for filtering the results, but merely for
+    *decorating* them.
+
+  * During queries against charity names, to filter results by whether
+    that charity has any in-stock inventory.  (Such queries are
+    sufficiently peformant because:
+
+    + The set of charity names -- and thus the subset which match any
+      query -- is very small.
+
+    + Charity-name queries are used only in Goodly, and thus are
+      fairly rare.
+
+The above-mentioned indexing executables ("write_str_file",
+"tag_tbl_mkr", "storefront_mkr") don't use the config file
+(cfg/config.yml) directly, but instead take that config info from the
+command line.  Those executables are typically called from a Ruby
+script ("script/build_one_index.rb"); it's the Ruby script which uses
+the config file directly.
+
+In the daemon, we have two db connections (type: Mysql.dbd):
+
+  * the production DB ("peeko_prod")
+  * the tag DB ("peeko_catalog_glu_tags")
+
+They are accessible via getter functions from the Dbd module
+(src/dbd.ml).  Once opened (and until closed or lost), they're cached
+for quicker access.
+
